@@ -27,6 +27,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.currentCompositionLocalContext
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -52,18 +53,12 @@ import coil.compose.rememberAsyncImagePainter
 import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
+import com.example.projects.data.getProgram
+import com.example.projects.data.getShortProgram
 import com.example.projects.viewmodel.ViewModel
 import kotlin.time.ExperimentalTime
 
 
-val exoTestOne = Exercise("01", "Jumping Jack", 30)
-val exoTestTwo = Exercise("02", "10 Pompes", 0)
-val exoTestThree = Exercise("03", "10 Pompes bras écartés", 0)
-val exoTestFour = Exercise("04", "Elévation frontale des bras", 30)
-val exoTestFive = Exercise("05", "Elévation latérale des bras", 30)
-val exoTestSix = Exercise("06", "Squat", 30)
-val listExoTest: MutableList<Exercise> = mutableListOf()
-val programTest = Program("001", "Corps complet", listExoTest, 30)
 var mMediaPlayerClick: MediaPlayer? = null
 var mMediaPlayerFanfare: MediaPlayer? = null
 
@@ -77,18 +72,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    listExoTest.add(exoTestOne)
-                    listExoTest.add(exoTestTwo)
-                    listExoTest.add(exoTestThree)
-                    listExoTest.add(exoTestFour)
-                    listExoTest.add(exoTestFive)
-                    listExoTest.add(exoTestSix)
-                    listExoTest.add(exoTestTwo)
-                    listExoTest.add(exoTestThree)
-                    listExoTest.add(exoTestFour)
-                    listExoTest.add(exoTestFive)
-                    listExoTest.add(exoTestSix)
-                    ProgramChosen(program = programTest)
+                    ProgramChosen(program = getProgram())
                 }
             }
             mMediaPlayerClick = MediaPlayer.create(this, R.raw.click_sound)
@@ -109,7 +93,7 @@ fun ProgramChosen(
     val titleState = viewModel.exerciseOrRestTextLiveData.observeAsState()
     Image(
         painter = painterResource(id = R.drawable.test_fond_3),
-        contentDescription = "fond",
+        contentDescription = LocalContext.current.getString(R.string.background),
         contentScale = ContentScale.FillBounds,
         modifier = Modifier
             .fillMaxWidth(1.0f)
@@ -127,7 +111,7 @@ fun ProgramChosen(
                     .weight(1f)
             ) {
                 Text(
-                    text = "Program: " + program.name,
+                    text = LocalContext.current.getString(R.string.program, program.name),
                     fontSize = 30.sp,
                     textAlign = TextAlign.Center,
                     modifier = Modifier
@@ -171,7 +155,7 @@ fun ProgramChosen(
             ) {
                 Row(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = numberExerciseInProgram(programTest, positionState.value!!),
+                        text = numberExerciseInProgram(program, positionState.value!!),
                         fontSize = 30.sp,
                         textAlign = TextAlign.Center,
                         modifier = Modifier
@@ -185,7 +169,7 @@ fun ProgramChosen(
                                 "Rest" -> {
                                     Image(
                                         painter = painterResource(id = R.drawable.skip_pause_1),
-                                        contentDescription = "fond",
+                                        contentDescription = LocalContext.current.getString(R.string.background),
                                         modifier = Modifier
                                             .clickable {
                                                 mMediaPlayerClick?.start()
@@ -213,7 +197,7 @@ fun ProgramChosen(
                                 "Start Program" -> {
                                     Image(
                                         painter = painterResource(id = R.drawable.start_session),
-                                        contentDescription = "fond",
+                                        contentDescription = LocalContext.current.getString(R.string.background),
                                         modifier = Modifier
                                             .clickable {
                                                 mMediaPlayerClick?.start()
@@ -240,7 +224,7 @@ fun ProgramChosen(
                                 else -> {
                                     Image(
                                         painter = painterResource(id = R.drawable.next_exercise),
-                                        contentDescription = "fond",
+                                        contentDescription = LocalContext.current.getString(R.string.background),
                                         modifier = Modifier
                                             .clickable {
                                                 mMediaPlayerClick?.start()
@@ -272,7 +256,7 @@ fun ProgramChosen(
                             }
                             Image(
                                 painter = painterResource(id = R.drawable.finish),
-                                contentDescription = "fond",
+                                contentDescription = LocalContext.current.getString(R.string.background),
                                 modifier = Modifier
                                     .clickable(enabled = !hasButtonBeenClicked) {
                                         hasButtonBeenClicked = true
@@ -415,11 +399,6 @@ fun getGifReferenceFromString(gif: String): Int {
 @Composable
 fun GreetingPreview() {
     ProjectSTheme {
-        listExoTest.add(exoTestOne)
-        listExoTest.add(exoTestTwo)
-        listExoTest.add(exoTestThree)
-        listExoTest.add(exoTestFour)
-        listExoTest.add(exoTestFive)
-        ProgramChosen(programTest)
+        ProgramChosen(getShortProgram())
     }
 }
