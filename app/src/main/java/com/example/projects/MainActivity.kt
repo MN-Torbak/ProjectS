@@ -89,8 +89,7 @@ fun ProgramChosen(
 ) {
     viewModel.initPosition()
     viewModel.initTitle()
-    val positionState = viewModel.positionLiveData.observeAsState()
-    val titleState = viewModel.exerciseOrRestTextLiveData.observeAsState()
+
     Image(
         painter = painterResource(id = R.drawable.test_fond_3),
         contentDescription = LocalContext.current.getString(R.string.background),
@@ -100,47 +99,22 @@ fun ProgramChosen(
             .fillMaxHeight(1.0f),
         colorFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(1f) })
     )
+    ProgramScafold(program = program, viewModel)
+
+
+}
+@OptIn(ExperimentalTime::class)
+@Composable
+fun ProgramScafold(
+    program: Program,
+    viewModel: ViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+){
+    val positionState = viewModel.positionLiveData.observeAsState()
+    val titleState = viewModel.exerciseOrRestTextLiveData.observeAsState()
 
     Column(modifier = Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            ElevatedCard(
-                elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
-                colors = CardDefaults.cardColors(colorResource(R.color.fond_color_test)),
-                modifier = Modifier
-                    .size(width = 240.dp, height = 100.dp)
-                    .weight(1f)
-            ) {
-                Text(
-                    text = LocalContext.current.getString(R.string.program, program.name),
-                    fontSize = 30.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth(1.0f)
-                        .fillMaxHeight(1.0f)
-                        .wrapContentHeight()
-                )
-            }
-        }
-        Row(modifier = Modifier.fillMaxWidth()) {
-            ElevatedCard(
-                elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
-                colors = CardDefaults.cardColors(colorResource(R.color.fond_color_test)),
-                modifier = Modifier
-                    .size(width = 240.dp, height = 100.dp)
-                    .weight(1f)
-            ) {
-                Text(
-                    text = titleState.value!!,
-                    lineHeight = 35.sp,
-                    fontSize = 30.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth(1.0f)
-                        .fillMaxHeight(1.0f)
-                        .wrapContentHeight()
-                )
-            }
-        }
+        ProgramNameRow(program = program)
+        ExerciseNameRow(program = program, viewModel = viewModel)
 
         GifImage()
         MainApp(viewModel)
@@ -231,7 +205,10 @@ fun ProgramChosen(
                                                 viewModel.defineTitle(program)
                                                 viewModel.stop()
                                                 for (exercise in program.exerciseList) {
-                                                    Log.d("toto", "${exercise.duration}, ${exercise.name}")
+                                                    Log.d(
+                                                        "toto",
+                                                        "${exercise.duration}, ${exercise.name}"
+                                                    )
                                                     if ("Exercise: " + exercise.name == viewModel.exerciseOrRestTextLiveData.value && exercise.duration > 0) {
                                                         viewModel.countdown(exercise.duration)
                                                     } else if ("Exercise: " + exercise.name == viewModel.exerciseOrRestTextLiveData.value && exercise.duration == 0) {
@@ -276,7 +253,60 @@ fun ProgramChosen(
             }
         }
     }
+}
 
+@OptIn(ExperimentalTime::class)
+@Composable
+fun ProgramNameRow(
+    program: Program,
+){
+    Row(modifier = Modifier.fillMaxWidth()) {
+        ElevatedCard(
+            elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
+            colors = CardDefaults.cardColors(colorResource(R.color.fond_color_test)),
+            modifier = Modifier
+                .size(width = 240.dp, height = 100.dp)
+                .weight(1f)
+        ) {
+            Text(
+                text = LocalContext.current.getString(R.string.program, program.name),
+                fontSize = 30.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth(1.0f)
+                    .fillMaxHeight(1.0f)
+                    .wrapContentHeight()
+            )
+        }
+    }
+}
+
+
+@OptIn(ExperimentalTime::class)
+@Composable
+fun ExerciseNameRow(program: Program,
+                    viewModel: ViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),){
+    val titleState = viewModel.exerciseOrRestTextLiveData.observeAsState()
+    Row(modifier = Modifier.fillMaxWidth()) {
+        ElevatedCard(
+            elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
+            colors = CardDefaults.cardColors(colorResource(R.color.fond_color_test)),
+            modifier = Modifier
+                .size(width = 240.dp, height = 100.dp)
+                .weight(1f)
+        ) {
+            Text(
+                text = titleState.value!!,
+                lineHeight = 35.sp,
+                fontSize = 30.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth(1.0f)
+                    .fillMaxHeight(1.0f)
+                    .wrapContentHeight()
+            )
+        }
+    }
 }
 
 fun numberExerciseInProgram(program: Program, position: Int): String {
@@ -284,7 +314,6 @@ fun numberExerciseInProgram(program: Program, position: Int): String {
     val numberOfExerciseInProgram = program.exerciseList.size
     return "$exerciseID/$numberOfExerciseInProgram"
 }
-
 @OptIn(ExperimentalTime::class)
 @Composable
 fun MainApp(viewModel: ViewModel) {
