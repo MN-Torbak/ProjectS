@@ -309,6 +309,43 @@ fun ExerciseNameRow(program: Program,
     }
 }
 
+enum class ImageType {REST, START, OTHER, END}
+
+fun getDrawableIdFromImageType(imageType: ImageType): Int{
+    return 0
+}
+@OptIn(ExperimentalTime::class)
+@Composable
+fun GenericImage(program: Program,
+              viewModel: ViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+              imageType: ImageType){
+    Image(
+        painter = painterResource(id = R.drawable.skip_pause_1),
+        contentDescription = LocalContext.current.getString(R.string.background),
+        modifier = Modifier
+            .clickable {
+                mMediaPlayerClick?.start()
+                viewModel.defineTitle(program)
+                viewModel.stop()
+                for (exercise in program.exerciseList) {
+                    if ("Exercise: " + exercise.name == viewModel.exerciseOrRestTextLiveData.value && exercise.duration > 0) {
+                        viewModel.countdown(exercise.duration)
+                    } else if ("Exercise: " + exercise.name == viewModel.exerciseOrRestTextLiveData.value && exercise.duration == 0) {
+                        viewModel.stop()
+                    }
+                }
+                if (viewModel.exerciseOrRestTextLiveData.value == "Rest") {
+                    viewModel.startExerciseWithDuration(5)
+                }
+            }
+            .size(width = 200.dp, height = 100.dp),
+        contentScale = ContentScale.FillBounds,
+        colorFilter = ColorFilter.colorMatrix(ColorMatrix().apply {
+            setToSaturation(1f)
+        })
+    )
+}
+
 fun numberExerciseInProgram(program: Program, position: Int): String {
     val exerciseID = position + 1
     val numberOfExerciseInProgram = program.exerciseList.size
