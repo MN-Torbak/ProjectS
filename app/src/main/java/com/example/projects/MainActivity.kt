@@ -27,6 +27,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.currentCompositionLocalContext
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -52,18 +53,12 @@ import coil.compose.rememberAsyncImagePainter
 import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
+import com.example.projects.data.getProgram
+import com.example.projects.data.getShortProgram
 import com.example.projects.viewmodel.ViewModel
 import kotlin.time.ExperimentalTime
 
 
-val exoTestOne = Exercise("01", "Jumping Jack", 30)
-val exoTestTwo = Exercise("02", "10 Pompes", 0)
-val exoTestThree = Exercise("03", "10 Pompes bras écartés", 0)
-val exoTestFour = Exercise("04", "Elévation frontale des bras", 30)
-val exoTestFive = Exercise("05", "Elévation latérale des bras", 30)
-val exoTestSix = Exercise("06", "Squat", 30)
-val listExoTest: MutableList<Exercise> = mutableListOf()
-val programTest = Program("001", "Corps complet", listExoTest, 30)
 var mMediaPlayerClick: MediaPlayer? = null
 var mMediaPlayerFanfare: MediaPlayer? = null
 
@@ -77,18 +72,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    listExoTest.add(exoTestOne)
-                    listExoTest.add(exoTestTwo)
-                    listExoTest.add(exoTestThree)
-                    listExoTest.add(exoTestFour)
-                    listExoTest.add(exoTestFive)
-                    listExoTest.add(exoTestSix)
-                    listExoTest.add(exoTestTwo)
-                    listExoTest.add(exoTestThree)
-                    listExoTest.add(exoTestFour)
-                    listExoTest.add(exoTestFive)
-                    listExoTest.add(exoTestSix)
-                    ProgramChosen(program = programTest)
+                    ProgramChosen(program = getProgram())
                 }
             }
             mMediaPlayerClick = MediaPlayer.create(this, R.raw.click_sound)
@@ -105,58 +89,32 @@ fun ProgramChosen(
 ) {
     viewModel.initPosition()
     viewModel.initTitle()
-    val positionState = viewModel.positionLiveData.observeAsState()
-    val titleState = viewModel.exerciseOrRestTextLiveData.observeAsState()
+
     Image(
         painter = painterResource(id = R.drawable.test_fond_3),
-        contentDescription = "fond",
+        contentDescription = LocalContext.current.getString(R.string.background),
         contentScale = ContentScale.FillBounds,
         modifier = Modifier
             .fillMaxWidth(1.0f)
             .fillMaxHeight(1.0f),
         colorFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(1f) })
     )
+    ProgramScafold(program = program, viewModel)
+
+
+}
+@OptIn(ExperimentalTime::class)
+@Composable
+fun ProgramScafold(
+    program: Program,
+    viewModel: ViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+){
+    val positionState = viewModel.positionLiveData.observeAsState()
+    val titleState = viewModel.exerciseOrRestTextLiveData.observeAsState()
 
     Column(modifier = Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            ElevatedCard(
-                elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
-                colors = CardDefaults.cardColors(colorResource(R.color.fond_color_test)),
-                modifier = Modifier
-                    .size(width = 240.dp, height = 100.dp)
-                    .weight(1f)
-            ) {
-                Text(
-                    text = "Program: " + program.name,
-                    fontSize = 30.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth(1.0f)
-                        .fillMaxHeight(1.0f)
-                        .wrapContentHeight()
-                )
-            }
-        }
-        Row(modifier = Modifier.fillMaxWidth()) {
-            ElevatedCard(
-                elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
-                colors = CardDefaults.cardColors(colorResource(R.color.fond_color_test)),
-                modifier = Modifier
-                    .size(width = 240.dp, height = 100.dp)
-                    .weight(1f)
-            ) {
-                Text(
-                    text = titleState.value!!,
-                    lineHeight = 35.sp,
-                    fontSize = 30.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth(1.0f)
-                        .fillMaxHeight(1.0f)
-                        .wrapContentHeight()
-                )
-            }
-        }
+        ProgramNameRow(program = program)
+        ExerciseNameRow(program = program, viewModel = viewModel)
 
         GifImage()
         MainApp(viewModel)
@@ -171,7 +129,7 @@ fun ProgramChosen(
             ) {
                 Row(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = numberExerciseInProgram(programTest, positionState.value!!),
+                        text = numberExerciseInProgram(program, positionState.value!!),
                         fontSize = 30.sp,
                         textAlign = TextAlign.Center,
                         modifier = Modifier
@@ -185,7 +143,7 @@ fun ProgramChosen(
                                 "Rest" -> {
                                     Image(
                                         painter = painterResource(id = R.drawable.skip_pause_1),
-                                        contentDescription = "fond",
+                                        contentDescription = LocalContext.current.getString(R.string.background),
                                         modifier = Modifier
                                             .clickable {
                                                 mMediaPlayerClick?.start()
@@ -213,7 +171,7 @@ fun ProgramChosen(
                                 "Start Program" -> {
                                     Image(
                                         painter = painterResource(id = R.drawable.start_session),
-                                        contentDescription = "fond",
+                                        contentDescription = LocalContext.current.getString(R.string.background),
                                         modifier = Modifier
                                             .clickable {
                                                 mMediaPlayerClick?.start()
@@ -240,14 +198,17 @@ fun ProgramChosen(
                                 else -> {
                                     Image(
                                         painter = painterResource(id = R.drawable.next_exercise),
-                                        contentDescription = "fond",
+                                        contentDescription = LocalContext.current.getString(R.string.background),
                                         modifier = Modifier
                                             .clickable {
                                                 mMediaPlayerClick?.start()
                                                 viewModel.defineTitle(program)
                                                 viewModel.stop()
                                                 for (exercise in program.exerciseList) {
-                                                    Log.d("toto", "${exercise.duration}, ${exercise.name}")
+                                                    Log.d(
+                                                        "toto",
+                                                        "${exercise.duration}, ${exercise.name}"
+                                                    )
                                                     if ("Exercise: " + exercise.name == viewModel.exerciseOrRestTextLiveData.value && exercise.duration > 0) {
                                                         viewModel.countdown(exercise.duration)
                                                     } else if ("Exercise: " + exercise.name == viewModel.exerciseOrRestTextLiveData.value && exercise.duration == 0) {
@@ -272,7 +233,7 @@ fun ProgramChosen(
                             }
                             Image(
                                 painter = painterResource(id = R.drawable.finish),
-                                contentDescription = "fond",
+                                contentDescription = LocalContext.current.getString(R.string.background),
                                 modifier = Modifier
                                     .clickable(enabled = !hasButtonBeenClicked) {
                                         hasButtonBeenClicked = true
@@ -292,7 +253,60 @@ fun ProgramChosen(
             }
         }
     }
+}
 
+@OptIn(ExperimentalTime::class)
+@Composable
+fun ProgramNameRow(
+    program: Program,
+){
+    Row(modifier = Modifier.fillMaxWidth()) {
+        ElevatedCard(
+            elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
+            colors = CardDefaults.cardColors(colorResource(R.color.fond_color_test)),
+            modifier = Modifier
+                .size(width = 240.dp, height = 100.dp)
+                .weight(1f)
+        ) {
+            Text(
+                text = LocalContext.current.getString(R.string.program, program.name),
+                fontSize = 30.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth(1.0f)
+                    .fillMaxHeight(1.0f)
+                    .wrapContentHeight()
+            )
+        }
+    }
+}
+
+
+@OptIn(ExperimentalTime::class)
+@Composable
+fun ExerciseNameRow(program: Program,
+                    viewModel: ViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),){
+    val titleState = viewModel.exerciseOrRestTextLiveData.observeAsState()
+    Row(modifier = Modifier.fillMaxWidth()) {
+        ElevatedCard(
+            elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
+            colors = CardDefaults.cardColors(colorResource(R.color.fond_color_test)),
+            modifier = Modifier
+                .size(width = 240.dp, height = 100.dp)
+                .weight(1f)
+        ) {
+            Text(
+                text = titleState.value!!,
+                lineHeight = 35.sp,
+                fontSize = 30.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth(1.0f)
+                    .fillMaxHeight(1.0f)
+                    .wrapContentHeight()
+            )
+        }
+    }
 }
 
 fun numberExerciseInProgram(program: Program, position: Int): String {
@@ -300,7 +314,6 @@ fun numberExerciseInProgram(program: Program, position: Int): String {
     val numberOfExerciseInProgram = program.exerciseList.size
     return "$exerciseID/$numberOfExerciseInProgram"
 }
-
 @OptIn(ExperimentalTime::class)
 @Composable
 fun MainApp(viewModel: ViewModel) {
@@ -415,11 +428,6 @@ fun getGifReferenceFromString(gif: String): Int {
 @Composable
 fun GreetingPreview() {
     ProjectSTheme {
-        listExoTest.add(exoTestOne)
-        listExoTest.add(exoTestTwo)
-        listExoTest.add(exoTestThree)
-        listExoTest.add(exoTestFour)
-        listExoTest.add(exoTestFive)
-        ProgramChosen(programTest)
+        ProgramChosen(getShortProgram())
     }
 }

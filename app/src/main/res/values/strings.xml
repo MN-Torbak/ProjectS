@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Project S</string>
+    <string name="background">Fond</string>
+    <string name="program">Programme : %s</string>
 </resources>
