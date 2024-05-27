@@ -1,9 +1,7 @@
 package com.example.projects
 
 import android.media.MediaPlayer
-import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -27,6 +25,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -37,33 +36,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.ImageLoader
-import com.example.projects.model.Exercise
 import com.example.projects.model.Program
+import com.example.projects.model.getProgramTest
 import com.example.projects.ui.theme.ProjectSTheme
-import coil.compose.rememberAsyncImagePainter
-import coil.decode.GifDecoder
-import coil.decode.ImageDecoderDecoder
-import coil.request.ImageRequest
 import com.example.projects.viewmodel.ViewModel
 import kotlin.time.ExperimentalTime
 
-
-val exoTestOne = Exercise("01", "Jumping Jack", 30)
-val exoTestTwo = Exercise("02", "10 Pompes", 0)
-val exoTestThree = Exercise("03", "10 Pompes bras écartés", 0)
-val exoTestFour = Exercise("04", "Elévation frontale des bras", 30)
-val exoTestFive = Exercise("05", "Elévation latérale des bras", 30)
-val exoTestSix = Exercise("06", "Squat", 30)
-val listExoTest: MutableList<Exercise> = mutableListOf()
-val programTest = Program("001", "Corps complet", listExoTest, 30)
 var mMediaPlayerClick: MediaPlayer? = null
 var mMediaPlayerFanfare: MediaPlayer? = null
 
@@ -77,22 +61,34 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    listExoTest.add(exoTestOne)
-                    listExoTest.add(exoTestTwo)
-                    listExoTest.add(exoTestThree)
-                    listExoTest.add(exoTestFour)
-                    listExoTest.add(exoTestFive)
-                    listExoTest.add(exoTestSix)
-                    listExoTest.add(exoTestTwo)
-                    listExoTest.add(exoTestThree)
-                    listExoTest.add(exoTestFour)
-                    listExoTest.add(exoTestFive)
-                    listExoTest.add(exoTestSix)
-                    ProgramChosen(program = programTest)
+                    ProgramChosen(getProgramTest())
                 }
             }
             mMediaPlayerClick = MediaPlayer.create(this, R.raw.click_sound)
             mMediaPlayerFanfare = MediaPlayer.create(this, R.raw.fanfare)
+        }
+    }
+}
+
+@Composable
+fun TitleRow(program: Program) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        ElevatedCard(
+            elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
+            colors = CardDefaults.cardColors(colorResource(R.color.card_background)),
+            modifier = Modifier
+                .size(width = 240.dp, height = 100.dp)
+                .weight(1f)
+        ) {
+            Text(
+                text = "Program: " + program.name,
+                fontSize = 30.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth(1.0f)
+                    .fillMaxHeight(1.0f)
+                    .wrapContentHeight()
+            )
         }
     }
 }
@@ -108,7 +104,7 @@ fun ProgramChosen(
     val positionState = viewModel.positionLiveData.observeAsState()
     val titleState = viewModel.exerciseOrRestTextLiveData.observeAsState()
     Image(
-        painter = painterResource(id = R.drawable.test_fond_3),
+        painter = painterResource(id = R.drawable.street_background),
         contentDescription = "fond",
         contentScale = ContentScale.FillBounds,
         modifier = Modifier
@@ -117,61 +113,27 @@ fun ProgramChosen(
         colorFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(1f) })
     )
 
-    Column(modifier = Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            ElevatedCard(
-                elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
-                colors = CardDefaults.cardColors(colorResource(R.color.fond_color_test)),
-                modifier = Modifier
-                    .size(width = 240.dp, height = 100.dp)
-                    .weight(1f)
-            ) {
-                Text(
-                    text = "Program: " + program.name,
-                    fontSize = 30.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth(1.0f)
-                        .fillMaxHeight(1.0f)
-                        .wrapContentHeight()
-                )
-            }
-        }
-        Row(modifier = Modifier.fillMaxWidth()) {
-            ElevatedCard(
-                elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
-                colors = CardDefaults.cardColors(colorResource(R.color.fond_color_test)),
-                modifier = Modifier
-                    .size(width = 240.dp, height = 100.dp)
-                    .weight(1f)
-            ) {
-                Text(
-                    text = titleState.value!!,
-                    lineHeight = 35.sp,
-                    fontSize = 30.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth(1.0f)
-                        .fillMaxHeight(1.0f)
-                        .wrapContentHeight()
-                )
-            }
-        }
-
+    Column(
+        modifier = Modifier.padding(15.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        TitleRow(program)
+        ExerciseRow(titleState)
         GifImage()
-        MainApp(viewModel)
+        TimerRow(viewModel)
 
         Row(modifier = Modifier.fillMaxWidth()) {
             ElevatedCard(
                 elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
-                colors = CardDefaults.cardColors(colorResource(R.color.fond_color_test)),
+                colors = CardDefaults.cardColors(colorResource(R.color.card_background)),
                 modifier = Modifier
                     .size(width = 50.dp, height = 100.dp)
                     .weight(1f)
             ) {
                 Row(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = numberExerciseInProgram(programTest, positionState.value!!),
+                        text = exercisePositionInProgram(program, positionState.value!!),
                         fontSize = 30.sp,
                         textAlign = TextAlign.Center,
                         modifier = Modifier
@@ -182,87 +144,28 @@ fun ProgramChosen(
                     Box {
                         if (positionState.value != program.exerciseList.size - 1) {
                             when (titleState.value) {
-                                "Rest" -> {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.skip_pause_1),
-                                        contentDescription = "fond",
-                                        modifier = Modifier
-                                            .clickable {
-                                                mMediaPlayerClick?.start()
-                                                viewModel.defineTitle(program)
-                                                viewModel.stop()
-                                                for (exercise in program.exerciseList) {
-                                                    if ("Exercise: " + exercise.name == viewModel.exerciseOrRestTextLiveData.value && exercise.duration > 0) {
-                                                        viewModel.countdown(exercise.duration)
-                                                    } else if ("Exercise: " + exercise.name == viewModel.exerciseOrRestTextLiveData.value && exercise.duration == 0) {
-                                                        viewModel.stop()
-                                                    }
-                                                }
-                                                if (viewModel.exerciseOrRestTextLiveData.value == "Rest") {
-                                                    viewModel.startExerciseWithDuration(5)
-                                                }
-                                            }
-                                            .size(width = 200.dp, height = 100.dp),
-                                        contentScale = ContentScale.FillBounds,
-                                        colorFilter = ColorFilter.colorMatrix(ColorMatrix().apply {
-                                            setToSaturation(1f)
-                                        })
+                                "Start Program" -> {
+                                    ImageButton(
+                                        viewModel,
+                                        program,
+                                        R.drawable.start_session_image_button,
+                                        firstStart = true
                                     )
                                 }
 
-                                "Start Program" -> {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.start_session),
-                                        contentDescription = "fond",
-                                        modifier = Modifier
-                                            .clickable {
-                                                mMediaPlayerClick?.start()
-                                                viewModel.defineTitle(program)
-                                                for (exercise in program.exerciseList) {
-                                                    if ("Exercise: " + exercise.name == viewModel.exerciseOrRestTextLiveData.value && exercise.duration > 0) {
-                                                        viewModel.countdown(exercise.duration)
-                                                    } else if ("Exercise: " + exercise.name == viewModel.exerciseOrRestTextLiveData.value && exercise.duration == 0) {
-
-                                                    }
-                                                }
-                                                if (viewModel.exerciseOrRestTextLiveData.value == "Rest") {
-                                                    viewModel.startExerciseWithDuration(5)
-                                                }
-                                            }
-                                            .size(width = 200.dp, height = 100.dp),
-                                        contentScale = ContentScale.FillBounds,
-                                        colorFilter = ColorFilter.colorMatrix(ColorMatrix().apply {
-                                            setToSaturation(1f)
-                                        })
+                                "Rest" -> {
+                                    ImageButton(
+                                        viewModel,
+                                        program,
+                                        R.drawable.skip_pause_image_button
                                     )
                                 }
 
                                 else -> {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.next_exercise),
-                                        contentDescription = "fond",
-                                        modifier = Modifier
-                                            .clickable {
-                                                mMediaPlayerClick?.start()
-                                                viewModel.defineTitle(program)
-                                                viewModel.stop()
-                                                for (exercise in program.exerciseList) {
-                                                    Log.d("toto", "${exercise.duration}, ${exercise.name}")
-                                                    if ("Exercise: " + exercise.name == viewModel.exerciseOrRestTextLiveData.value && exercise.duration > 0) {
-                                                        viewModel.countdown(exercise.duration)
-                                                    } else if ("Exercise: " + exercise.name == viewModel.exerciseOrRestTextLiveData.value && exercise.duration == 0) {
-                                                        viewModel.stop()
-                                                    }
-                                                }
-                                                if (viewModel.exerciseOrRestTextLiveData.value == "Rest") {
-                                                    viewModel.startExerciseWithDuration(5)
-                                                }
-                                            }
-                                            .size(width = 200.dp, height = 100.dp),
-                                        contentScale = ContentScale.FillBounds,
-                                        colorFilter = ColorFilter.colorMatrix(ColorMatrix().apply {
-                                            setToSaturation(1f)
-                                        })
+                                    ImageButton(
+                                        viewModel,
+                                        program,
+                                        R.drawable.next_exercise_image_button
                                     )
                                 }
                             }
@@ -271,10 +174,11 @@ fun ProgramChosen(
                                 mutableStateOf(false)
                             }
                             Image(
-                                painter = painterResource(id = R.drawable.finish),
+                                painter = painterResource(id = R.drawable.finish_image_button),
                                 contentDescription = "fond",
                                 modifier = Modifier
                                     .clickable(enabled = !hasButtonBeenClicked) {
+                                        viewModel.stop()
                                         hasButtonBeenClicked = true
                                         mMediaPlayerFanfare?.start()
                                         viewModel.exerciseOrRestTextLiveData.value =
@@ -295,7 +199,52 @@ fun ProgramChosen(
 
 }
 
-fun numberExerciseInProgram(program: Program, position: Int): String {
+@Composable
+private fun ExerciseRow(titleState: State<String?>) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        ElevatedCard(
+            elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
+            colors = CardDefaults.cardColors(colorResource(R.color.card_background)),
+            modifier = Modifier
+                .size(width = 240.dp, height = 100.dp)
+                .weight(1f)
+        ) {
+            Text(
+                text = titleState.value!!,
+                lineHeight = 35.sp,
+                fontSize = 30.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth(1.0f)
+                    .fillMaxHeight(1.0f)
+                    .wrapContentHeight()
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalTime::class)
+fun buttonNext(viewModel: ViewModel, program: Program, firstStart: Boolean = false) {
+    mMediaPlayerClick?.start()
+    viewModel.defineTitle(program)
+    if (!firstStart) {
+        viewModel.stop()
+    }
+    for (exercise in program.exerciseList) {
+        if ("Exercise: " + exercise.name == viewModel.exerciseOrRestTextLiveData.value && exercise.duration > 0) {
+            viewModel.countdown(exercise.duration)
+            break
+        } else if ("Exercise: " + exercise.name == viewModel.exerciseOrRestTextLiveData.value && exercise.duration == 0) {
+            viewModel.stop()
+            break
+        }
+    }
+    if (viewModel.exerciseOrRestTextLiveData.value == "Rest") {
+        viewModel.startExerciseWithDuration(5)
+    }
+}
+
+fun exercisePositionInProgram(program: Program, position: Int): String {
     val exerciseID = position + 1
     val numberOfExerciseInProgram = program.exerciseList.size
     return "$exerciseID/$numberOfExerciseInProgram"
@@ -303,31 +252,33 @@ fun numberExerciseInProgram(program: Program, position: Int): String {
 
 @OptIn(ExperimentalTime::class)
 @Composable
-fun MainApp(viewModel: ViewModel) {
-    MainApp(
-        isPlaying = viewModel.isPlaying,
-        seconds = viewModel.seconds,
-        minutes = viewModel.minutes,
-        onStart = { viewModel.start() },
-        onPause = { viewModel.pause() },
-        onStop = { viewModel.stop() }
+fun ImageButton(viewModel: ViewModel, program: Program, id: Int, firstStart: Boolean = false) {
+    Image(
+        painter = painterResource(id),
+        contentDescription = "fond",
+        modifier = Modifier
+            .clickable {
+                buttonNext(viewModel, program, firstStart)
+            }
+            .size(width = 200.dp, height = 100.dp),
+        contentScale = ContentScale.FillBounds,
+        colorFilter = ColorFilter.colorMatrix(ColorMatrix().apply {
+            setToSaturation(1f)
+        })
     )
 }
 
+@OptIn(ExperimentalTime::class)
 @Composable
-private fun MainApp(
-    isPlaying: Boolean,
-    seconds: String,
-    minutes: String,
-    onStart: () -> Unit = {},
-    onPause: () -> Unit = {},
-    onStop: () -> Unit = {},
-
-    ) {
+private fun TimerRow(
+    viewModel: ViewModel
+) {
+    val seconds = viewModel.seconds
+    val minutes = viewModel.minutes
     Row(modifier = Modifier.fillMaxWidth()) {
         ElevatedCard(
             elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
-            colors = CardDefaults.cardColors(colorResource(R.color.fond_color_test)),
+            colors = CardDefaults.cardColors(colorResource(R.color.card_background)),
             modifier = Modifier
                 .size(width = 240.dp, height = 100.dp)
                 .weight(1F)
@@ -348,51 +299,11 @@ private fun MainApp(
                 Spacer(modifier = Modifier.weight(1f))
             }
         }
-
     }
 }
 
-@OptIn(ExperimentalTime::class)
 @Composable
-fun GifImage(
-    modifier: Modifier = Modifier,
-    viewModel: ViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
-) {
-    /*val context = LocalContext.current
-    val gif = viewModel.gifLiveData.observeAsState()
-    val imageLoader = ImageLoader.Builder(context)
-        .components {
-            if (SDK_INT >= 28) {
-                add(ImageDecoderDecoder.Factory())
-            } else {
-                add(GifDecoder.Factory())
-            }
-        }
-        .build()
-
-        Image(
-            painter = painterResource(id = R.drawable.gif_waiting_img),
-            contentDescription = "fond",
-            modifier = Modifier.size(width = 300.dp, height = 150.dp),
-            contentScale = ContentScale.FillBounds,
-            colorFilter = ColorFilter.colorMatrix(ColorMatrix().apply {
-                setToSaturation(1f)
-            })
-        )
-
-
-    // Pour mettre un GIF plutôt qu'une image
-
-    Image(
-        painter = rememberAsyncImagePainter(
-            ImageRequest.Builder(context).data(data = getGifReferenceFromString(gif.value!!)).apply(block = {
-                size(coil.size.Size.ORIGINAL)
-            }).build(), imageLoader = imageLoader
-        ),
-        contentDescription = null,
-        modifier = modifier.size(width = 400.dp, height = 200.dp),
-    )*/
-
+fun GifImage() {
     Image(
         painter = painterResource(id = R.drawable.gif_waiting_img),
         contentDescription = "fond",
@@ -404,22 +315,11 @@ fun GifImage(
     )
 }
 
-fun getGifReferenceFromString(gif: String): Int {
-    //TODO: when avec une enum class faite dans le viewmodel
-    //return R.drawable.push_up_gif
-    return R.drawable.gif_waiting_img
-}
-
 @OptIn(ExperimentalTime::class)
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
     ProjectSTheme {
-        listExoTest.add(exoTestOne)
-        listExoTest.add(exoTestTwo)
-        listExoTest.add(exoTestThree)
-        listExoTest.add(exoTestFour)
-        listExoTest.add(exoTestFive)
-        ProgramChosen(programTest)
+        ProgramChosen(getProgramTest())
     }
 }

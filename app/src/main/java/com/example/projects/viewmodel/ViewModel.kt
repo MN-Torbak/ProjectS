@@ -1,14 +1,12 @@
 package com.example.projects.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.viewModelScope
 import com.example.projects.model.Program
-import com.example.projects.programTest
+import com.example.projects.model.getProgramTest
 import java.util.*
 import kotlin.concurrent.fixedRateTimer
 import kotlin.time.Duration
@@ -21,20 +19,12 @@ class ViewModel : ViewModel() {
 
     //TIMER
 
-    private var time: Duration = Duration.ZERO
+    private var time: Duration = ZERO
     private lateinit var timer: Timer
 
     var seconds by mutableStateOf("00")
     var minutes by mutableStateOf("00")
-    var isPlaying by mutableStateOf(false)
-
-    fun start() {
-        timer = fixedRateTimer(initialDelay = 1000L, period = 1000L) {
-            time = time.plus(1.seconds)
-            updateTimeStates()
-        }
-        isPlaying = true
-    }
+    private var isPlaying by mutableStateOf(false)
 
     fun startExerciseWithDuration(duration: Int) {
         if (time < duration.seconds) {
@@ -66,10 +56,9 @@ class ViewModel : ViewModel() {
     }
 
     private fun updateTimeStates() {
-        time.toComponents { hours, minutes, seconds, nanoseconds ->
+        time.toComponents { _, minutes, seconds, _ ->
             this@ViewModel.seconds = seconds.pad()
             this@ViewModel.minutes = minutes.pad()
-            Log.d("toto", "$seconds")
         }
     }
 
@@ -77,14 +66,14 @@ class ViewModel : ViewModel() {
         return this.toString().padStart(2, '0')
     }
 
-    fun pause() {
+    private fun pause() {
         timer.cancel()
         isPlaying = false
     }
 
     fun stop() {
         pause()
-        time = Duration.ZERO
+        time = ZERO
         updateTimeStates()
     }
 
@@ -94,23 +83,13 @@ class ViewModel : ViewModel() {
     val positionLiveData: MutableLiveData<Int> = _position
     private val _exerciseOrRestText = MutableLiveData<String>()
     var exerciseOrRestTextLiveData: MutableLiveData<String> = _exerciseOrRestText
-    val gifLiveData: MutableLiveData<String> = MutableLiveData<String>()
-
 
     fun initPosition() {
         _position.value = 0
     }
 
-    fun getRealPosition(): Int? {
-        return _position.value?.plus(1)
-    }
-
     private fun upPosition() {
         _position.value = _position.value?.plus(1)
-    }
-
-    fun downPosition() {
-        _position.value = _position.value?.minus(1)
     }
 
     fun initTitle() {
@@ -124,7 +103,7 @@ class ViewModel : ViewModel() {
         } else if (exerciseOrRestTextLiveData.value == "Exercise: " + program.exerciseList[_position.value!!].name) {
             exerciseOrRestTextLiveData.value = "Rest"
         } else if (exerciseOrRestTextLiveData.value == "Rest") {
-            if (_position.value != programTest.exerciseList.size - 1) {
+            if (_position.value != getProgramTest().exerciseList.size - 1) {
                 upPosition()
                 exerciseOrRestTextLiveData.value =
                     "Exercise: " + program.exerciseList[_position.value!!].name
