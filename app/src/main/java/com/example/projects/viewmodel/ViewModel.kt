@@ -2,12 +2,20 @@ package com.example.projects.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.MutableLiveData
+import com.example.projects.model.Exercise
 import com.example.projects.model.Program
+import com.example.projects.model.ProgramForFirebase
 import com.example.projects.model.getProgramTest
+import com.example.projects.repository.Repository
+import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.FirebaseFirestore
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.concurrent.fixedRateTimer
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.ZERO
@@ -18,7 +26,7 @@ import kotlin.time.ExperimentalTime
 class ViewModel : ViewModel() {
 
     //TIMER
-
+    private var myRepository: Repository = Repository()
     private var time: Duration = ZERO
     private lateinit var timer: Timer
 
@@ -67,7 +75,9 @@ class ViewModel : ViewModel() {
     }
 
     private fun pause() {
-        timer.cancel()
+        if (this::timer.isInitialized) {
+            timer.cancel()
+        }
         isPlaying = false
     }
 
@@ -109,5 +119,49 @@ class ViewModel : ViewModel() {
                     "Exercise: " + program.exerciseList[_position.value!!].name
             }
         }
+    }
+
+    //DB
+
+    fun getExerciseCollection(): CollectionReference {
+        return myRepository.getExerciseCollection()
+    }
+
+    fun getProgramCollection(): CollectionReference {
+        return myRepository.getProgramCollection()
+    }
+
+    fun getAllProgram(): SnapshotStateList<Program> {
+       val allProgramList: SnapshotStateList<Program> = mutableStateListOf()
+        val firestore = FirebaseFirestore.getInstance()
+        firestore.collection("program")
+            .get()
+            .addOnSuccessListener { querySnapshot ->
+                val documents = querySnapshot.documents
+                documents.forEach { document ->
+                    val data = document.data
+                    val programFromFirebase = ProgramForFirebase(
+                        name = data?.get("name") as String? ?: "",
+                        id = data?.get("id") as String? ?: "",
+                        rest = (data?.get("rest") as Long).toInt(),
+                        exerciseList = data["exerciseList"] as ArrayList<String>? ?: arrayListOf()
+                    )
+                    val programToAdd = myRepository.mapProgram(programFromFirebase)
+                    allProgramList.add(programToAdd)
+                }
+            }
+        return allProgramList
+    }
+
+    fun createExercise(name: String, duration: Int, repetition: Int) {
+        myRepository.createExercise(name, duration, repetition)
+    }
+
+    fun createProgramForFirebase(program: Program) {
+        myRepository.createProgramForFirebase(program)
+    }
+
+    fun createUser(id: String, name: String) {
+        myRepository.createUser(id, name)
     }
 }
